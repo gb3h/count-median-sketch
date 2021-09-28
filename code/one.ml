@@ -1,14 +1,22 @@
 open Core
+open Hashutil
 
-(* Fix a seed for deterministic runs *)
-let () = Random.init 5234
+let tuple_of_input a b c = a, b, c
+let num_hashes, end_range, file = Scanf.scanf "%d %d %s" tuple_of_input
 
-let generate_hashes m p k =
-  let prime_field_hash a b i = ((a * i) + b) % p % m in
-  let ab_list = List.init k ~f:(fun _ -> Random.int_incl 1 (p - 1), Random.int (p - 1)) in
-  let hashes = List.map ab_list ~f:(fun (a, b) -> prime_field_hash a b) in
-  hashes
+let hashes =
+  generate_hashes ~end_exclusive:end_range ~prime:(larger_prime end_range) num_hashes
 ;;
 
+let counters = Array.init num_hashes ~f:(fun _ -> Array.init end_range ~f:(fun _ -> 0))
 
-(* Read from stdin: Scanf.bscanf Scanf.Scanning.stdin "%d" print_int *)
+let () =
+  In_channel.with_file file ~f:(fun ic ->
+      let line = In_channel.input_line_exn ic in
+      let n = Int.of_string line in
+      List.iteri hashes ~f:(fun id hash ->
+          let output = hash n in
+          let counter = Array.get counters id in
+          Array.set counter output (Array.get counter output + 1)));
+  Array.iter counters ~f:(Array.iter ~f:print_int)
+;;

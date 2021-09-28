@@ -1,5 +1,5 @@
 open Assert
-open One
+open Hashutil
 
 let hashes = generate_hashes 5 19 3
 let first_hash = List.hd hashes
