@@ -12,6 +12,11 @@ default: all test
 all:
 	dune build --profile release @install 
 	@test -L main.native || ln -s _build/install/default/bin/main.native main.native
+	
+generator:	
+	dune build --profile release @install 
+	@test -L main.native || ln -s _build/install/default/bin/main.native main.native
+	ln -s _build/install/default/bin/generator generator
 
 test: all
 	./main.native --test

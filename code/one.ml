@@ -9,3 +9,6 @@ let generate_hashes m p k =
   let hashes = List.map ab_list ~f:(fun (a, b) -> prime_field_hash a b) in
   hashes
 ;;
+
+
+(* Read from stdin: Scanf.bscanf Scanf.Scanning.stdin "%d" print_int *)

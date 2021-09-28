@@ -1,5 +1,5 @@
-(library
- (name assert)
- (wrapped true)
- (libraries unix)
- (synopsis "Assertions for Testing"))
+(executable
+ (name generator)
+ (public_name generator)
+ (libraries code)
+ (package pset5))
