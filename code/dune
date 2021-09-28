@@ -1,4 +1,5 @@
-(library
- (name code)
- (modes byte native)
- (libraries assert core))
+(executable
+ (name one)
+ (public_name one)
+ (libraries assert code core)
+ (package pset5))
