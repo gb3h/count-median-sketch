@@ -1,0 +1,4 @@
+(library
+ (name code)
+ (modes byte native)
+ (libraries assert core))
