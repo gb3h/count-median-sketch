@@ -1,5 +1,5 @@
 (executable
  (name generator)
  (public_name generator)
- (libraries code)
+ (libraries code owl)
  (package pset5))
