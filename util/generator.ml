@@ -18,7 +18,7 @@ let ls =
   | "uniform" -> List.init num_vals ~f:(fun _ -> Random.int_incl 0 @@ (max_val - 1))
   | "exponential" ->
     List.init num_vals ~f:(fun _ ->
-        Stats.exponential_rvs ~lambda:0.5 |> Float.round_nearest |> Int.of_float)
+        Stats.exponential_rvs ~lambda:mu |> Float.round_nearest |> Int.of_float)
   | _ -> failwith "unexpected distribution"
 ;;
 

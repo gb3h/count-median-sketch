@@ -3,10 +3,10 @@ open Code.Hashutil
 open Owl
 open Owl_plplot
 
-let tuple_of_input a b c d = a, b, c, d
+let tuple_of_input a b c d e = a, b, c, d, e
 
-let num_hashes, hash_range, max_value, file_prefix =
-  Scanf.scanf "%d %d %d %s" tuple_of_input
+let num_hashes, hash_range, max_value, file_prefix, output =
+  Scanf.scanf "%d %d %d %s %s" tuple_of_input
 ;;
 
 let middle arr =
@@ -83,7 +83,10 @@ let print_query_data (elem, actual_count, min_count, r1, r2) =
   printf "%d ACT:%f MC:%f MED:%f EST:%f\n" elem actual_count min_count r1 r2
 ;;
 
-let res_ls = get_query_data file_prefix (List.range ~stride:10 0 max_value)
+let res_ls =
+  let stride = max_value / 10 in
+  get_query_data file_prefix (List.range ~stride 0 max_value)
+;;
 
 let plot res_ls =
   (* Initialise matrix for plotting *)
@@ -92,7 +95,7 @@ let plot res_ls =
   let min = Mat.empty len 1 in
   let res_of_1 = Mat.empty len 1 in
   let res_of_2 = Mat.empty len 1 in
-  let h = Plot.create ~m:2 ~n:2 "plot.png" in
+  let h = Plot.create ~m:2 ~n:2 output in
   (* Add results to [Plot.matrices] *)
   List.iteri res_ls (fun i e ->
       let elem, actual_count, min_count, res_one, res_two = e in
@@ -107,7 +110,7 @@ let plot res_ls =
   Plot.bar ~h actual;
   Plot.set_xlabel h "value";
   Plot.set_ylabel h "count";
-  Plot.subplot h 1 0;
+  Plot.subplot h 0 1;
   Plot.set_title h "min count sketch";
   Plot.bar ~h min;
   Plot.set_xlabel h "value";
