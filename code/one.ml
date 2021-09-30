@@ -1,10 +1,12 @@
 open Core
 open Code.Hashutil
+open Owl
+open Owl_plplot
 
-let tuple_of_input a b c d e = a, b, c, d, e
+let tuple_of_input a b c d = a, b, c, d
 
-let num_hashes, end_range, max_value, file_prefix, x =
-  Scanf.scanf "%d %d %d %s %d" tuple_of_input
+let num_hashes, hash_range, max_value, file_prefix =
+  Scanf.scanf "%d %d %d %s" tuple_of_input
 ;;
 
 let middle arr =
@@ -24,10 +26,16 @@ let print_counters counters =
 ;;
 
 let run_on_file file =
-  let hashes = generate_hashes ~end_exclusive:end_range num_hashes |> Array.of_list in
+  let hashes = generate_hashes ~end_exclusive:hash_range num_hashes |> Array.of_list in
   let real_counts = Array.init max_value ~f:(fun _ -> 0) in
   let counters =
-    Array.init num_hashes ~f:(fun _ -> Array.init end_range ~f:(fun _ -> 0))
+    Array.init num_hashes ~f:(fun _ -> Array.init hash_range ~f:(fun _ -> 0))
+  in
+  let min_counter x =
+    let arr = Array.init num_hashes ~f:(fun i -> counters.(i).(hashes.(i) x)) in
+    Array.sort arr ~compare:Int.compare;
+    (* middle arr *)
+    arr.(0) |> Int.to_float
   in
   let algorithm_one_query x =
     let arr = Array.init num_hashes ~f:(fun i -> counters.(i).(hashes.(i) x)) in
@@ -54,23 +62,67 @@ let run_on_file file =
           real_counts.(n) <- real_counts.(n) + 1;
           Array.iteri hashes ~f:(fun id hash ->
               let output = hash n in
-              let counter = Array.get counters id in
+              let counter = counters.(id) in
               counter.(output) <- counter.(output) + 1)));
-  real_counts, algorithm_one_query, algorithm_two_query
+  real_counts, min_counter, algorithm_one_query, algorithm_two_query
 ;;
 
-let run_multiple_queries file queries =
-  let real_counts, algorithm_one_query, algorithm_two_query = run_on_file file_prefix in
-  List.iter queries ~f:(fun x ->
-      let actual_count = real_counts.(x) in
-      let algo_one_res = algorithm_one_query x |> Float.round_nearest |> Int.of_float in
-      let algo_two_res = algorithm_two_query x |> Float.round_nearest |> Int.of_float in
-      printf "x: %d\n" x;
-      printf "real freq: %d\n" actual_count;
-      printf "algo 1 query: %d\n" algo_one_res;
-      printf "algo 1 diff: %d\n" (abs (actual_count - algo_one_res));
-      printf "algo 2 query: %d\n" algo_two_res;
-      printf "algo 2 diff: %d\n" (abs @@ (actual_count - algo_two_res)))
+let get_query_data file queries =
+  let real_counts, min_counter, algorithm_one_query, algorithm_two_query =
+    run_on_file file_prefix
+  in
+  List.map queries ~f:(fun elem ->
+      let actual_count = real_counts.(elem) |> Float.of_int in
+      let min_count = min_counter elem in
+      let algo_one_res = algorithm_one_query elem in
+      let algo_two_res = algorithm_two_query elem in
+      elem, actual_count, min_count, algo_one_res, algo_two_res)
 ;;
 
-let () = run_multiple_queries file_prefix [ x; 12 ]
+let print_query_data (elem, actual_count, min_count, r1, r2) =
+  printf "%d ACT:%f MC:%f MED:%f EST:%f\n" elem actual_count min_count r1 r2
+;;
+
+let res_ls = get_query_data file_prefix (List.range ~stride:10 0 max_value)
+
+let plot res_ls =
+  (* Initialise matrix for plotting *)
+  let len = List.length res_ls in
+  let actual = Mat.empty len 1 in
+  let min = Mat.empty len 1 in
+  let res_of_1 = Mat.empty len 1 in
+  let res_of_2 = Mat.empty len 1 in
+  let h = Plot.create ~m:2 ~n:2 "plot.png" in
+  (* Add results to [Plot.matrices] *)
+  List.iteri res_ls (fun i e ->
+      let elem, actual_count, min_count, res_one, res_two = e in
+      print_query_data e;
+      Mat.set actual i 0 actual_count;
+      Mat.set min i 0 min_count;
+      Mat.set res_of_1 i 0 res_one;
+      Mat.set res_of_2 i 0 res_two);
+  (* Plot each matrix *)
+  Plot.subplot h 0 0;
+  Plot.set_title h "actual";
+  Plot.bar ~h actual;
+  Plot.set_xlabel h "value";
+  Plot.set_ylabel h "count";
+  Plot.subplot h 1 0;
+  Plot.set_title h "min count sketch";
+  Plot.bar ~h min;
+  Plot.set_xlabel h "value";
+  Plot.set_ylabel h "count";
+  Plot.subplot h 1 0;
+  Plot.set_title h "algorithm 1";
+  Plot.bar ~h res_of_1;
+  Plot.set_xlabel h "value";
+  Plot.set_ylabel h "count";
+  Plot.subplot h 1 1;
+  Plot.set_title h "algorithm 2";
+  Plot.bar ~h res_of_2;
+  Plot.set_xlabel h "value";
+  Plot.set_ylabel h "count";
+  Plot.output h
+;;
+
+let () = plot res_ls

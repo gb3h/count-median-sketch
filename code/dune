@@ -1,5 +1,5 @@
 (executable
  (name one)
  (public_name one)
- (libraries assert code core)
+ (libraries assert code core owl owl-plplot)
  (package pset5))
